@@ -1,1 +1,41 @@
 services:
+#  my-web-server: # 서비스(컨테이너)에 이름을 붙이는 옵션
+#    container_name: web-server # 컨테이너를 띄울 때 붙이는 별칭
+#    image: nginx # 컨테이너를 실행시킬 때 어떤 이미지를 사용할 지 정의
+#    ports: # 포트 매핑을 어떻게 할 지 설정
+#      - 80:80
+#    # 여기까지 docker run --name webserver -d -p 80:80 nginx와 같음
+
+  my-server:
+    build: .
+    ports:
+      - 8080:8080
+    # my-db의 컨테이너가 생성되고 healthy 하다고 판단 될 때, 해당 컨테이너를 생성한다.
+    depends_on:
+      my-db:
+        condition: service_healthy
+      my-cache-server:
+        condition: service_healthy
+
+  my-db:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: pwd1234
+      MYSQL_DATABASE: mydb # MySQL 최초 실행 시 mydb라는 데이터베이스를 생성해준다.
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    ports:
+      - 3306:3306
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping" ] # MySQL이 healthy 한 지 판단할 수 있는 명령어
+      interval: 5s # 5초 간격으로 체크
+      retries: 10 # 10번까지 재시도
+
+  my-cache-server:
+    image: redis
+    ports:
+      - 6379:6379
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      retries: 10
