@@ -179,7 +179,7 @@ FROM [이미지명]:[태그명]
 
 # COPY - 호스트 컴퓨터에 있는 파일을 복사해서 컨테이너로 전달
 COPY [호스트 컴퓨터에 있는 복사할 파일의 경로] [컨테이너에서 파일이 위치할 경로]
-
+  
 # ENTRYPOINT - 컨테이너가 생성되고 최초로 실행할 때 수행되는 명령어
 ENTRYPOINT [명령문...]
 
@@ -199,11 +199,11 @@ EXPOSE [포트 번호]
 ### compose.yml
 ```yml
 services:
-	websever:
-		container_name: webserver
-		image: nginx
-		ports: 
-			- 80:80
+  websever:
+    container_name: webserver
+    image: nginx
+    ports: 
+      - 80:80
 ```
 
 ### compose.yml에서 정의한 컨테이너 실행
