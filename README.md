@@ -160,13 +160,18 @@ $ cat nginx.conf
 ---
 
 ## ✅ 볼륨(Volume)
+### 볼륨(Volume)을 사용하는 명령어
+```bash
+$ docker run -v [호스트의 디렉토리 절대경로]:[컨테이너의 디렉토리 절대경로] [이미지명]:[태그명]
+```
+
 ### 볼륨(Volume)을 활용해 MySQL 컨테이너 띄우기
 ```bash
-$ cd /Users/jaeseong/Documents/Develop
+$ cd /Users/yereumi/Documents/Develop
 $ mkdir docker-mysql # MySQL 데이터를 저장하고 싶은 폴더 만들기
 
 # docker run -e MYSQL_ROOT_PASSWORD=password123 -p 3306:3306 -v {호스트의 절대경로}/mysql_data:/var/lib/mysql -d mysql
-$ docker run -e MYSQL_ROOT_PASSWORD=password123 -p 3306:3306 -v /Users/jaeseong/Documents/Develop/docker-mysql/mysql_data:/var/lib/mysql -d mysql
+$ docker run -e MYSQL_ROOT_PASSWORD=password123 -p 3306:3306 -v /Users/jaeseong/yereumi/Develop/docker-mysql/mysql_data:/var/lib/mysql -d mysql
 ```
 
 ---
@@ -241,4 +246,69 @@ $ docker compose pull
 ### Docker Compose에서 이용한 컨테이너 종료하기
 ```bash
 $ docker compose down
+```
+
+---
+
+## ✅ Spring Boot, MySQL 컨테이너 동시에 띄워보기
+### application.yml 작성하기
+```yml
+spring:
+  datasource:
+    url: jdbc:mysql://my-db:3306/mydb # localhost가 아니라 mysql의 컨테이너 이름인 my-db로 수정
+    username: root
+    password: pwd1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+```
+
+### Dockerfile 작성하기
+```dockerfile
+FROM openjdk:17-jdk
+
+COPY build/libs/*SNAPSHOT.jar /app.jar
+
+ENTRYPOINT ["java", "-jar", "/app.jar"]
+```
+
+### compose.yml 작성하기
+```yml
+services:
+  my-server:
+    build: .
+    ports:
+      - 8080:8080
+		# my-db의 컨테이너가 생성되고 healthy 하다고 판단 될 때, 해당 컨테이너를 생성한다. 
+    depends_on:
+      my-db:
+        condition: service_healthy
+  my-db:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: pwd1234
+      MYSQL_DATABASE: mydb # MySQL 최초 실행 시 mydb라는 데이터베이스를 생성해준다.
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+    ports:
+      - 3306:3306
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping" ] # MySQL이 healthy 한 지 판단할 수 있는 명령어
+      interval: 5s # 5초 간격으로 체크
+      retries: 10 # 10번까지 재시도
+```
+
+### Spring Boot 프로젝트 빌드하기
+```bash
+$ ./gradlew clean build
+```
+
+### compose 파일 실행시키기
+```bash
+$ docker compose up -d **--build**
+```
+
+### compose 실행 현황 보기
+```bash
+$ docker compose ps
+$ docker ps
+$ docker logs [Container ID]
 ```
